@@ -7,12 +7,27 @@ function App() {
   const [devices, setDevices] = useState(null);
 
   const getDevices = async () => {
-    const devices = await navigator.bluetooth.requestDevice({
+    const device = await navigator.bluetooth.requestDevice({
       acceptAllDevices: true,
     });
 
-    console.log(devices);
-    setDevices(devices);
+    console.log(device);
+    console.log("Connecting to GATT Server...");
+    try {
+      await device.gatt.connect();
+    } catch (error) {
+      console.log(error);
+    }
+    console.log("Getting Service...");
+    const service = await device.gatt.getPrimaryService("battery_service").catch(console.log);
+    console.log("Getting Characteristic...");
+    const characteristic = await service.getCharacteristic("battery_level");
+    console.log("Reading Characteristic...");
+    const value = await characteristic.readValue();
+    console.log("Battery percentage is " + value.getUint8(0));
+    device.battery = value.getUint8(0);
+
+    setDevices(device);
   };
 
   return (
